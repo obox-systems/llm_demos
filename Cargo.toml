@@ -1,3 +1,3 @@
 [workspace]
 
-members = ["rust_ollama_examples", "rust_ai_func_call", "is_rust_king_data_sci", "rust_llm_frw_bfuture", "rust_gen_ai", "llm_chain"]
+members = ["rust_ollama_examples", "rust_ai_func_call", "is_rust_king_data_sci", "rust_llm_frw_bfuture", "rust_gen_ai", "llm_chain", "ai_buddy"]

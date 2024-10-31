@@ -46,6 +46,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai_buddy"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-openai 0.25.0",
+ "clap",
+ "dialoguer",
+ "tokio",
+]
+
+[[package]]
 name = "allocator-api2"
 version = "0.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
