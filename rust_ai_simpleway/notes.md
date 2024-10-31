@@ -2,6 +2,8 @@
 
 IMHO: A strange way. I wonder, did that GPT-neo company really gave him money? For 50k views?
 
+IMHO 2: whoever sent him money on this video are very stupid people.
+
 ## Preliminary things
 
 - Install "libtorch"
