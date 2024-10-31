@@ -4,16 +4,17 @@ use anyhow::{bail, Context};
 use async_openai::{
     config::OpenAIConfig,
     types::{
-        AssistantObject, CreateAssistantRequest, CreateAssistantRequestArgs,
-        CreateMessageRequestArgs, CreateRunRequestArgs, CreateThreadRequest, MessageContent,
-        MessageRole, RunStatus, ThreadObject,
+        AssistantObject, AssistantTools, AssistantToolsFileSearch, CreateAssistantFileRequest,
+        CreateAssistantRequest, CreateAssistantRequestArgs, CreateFileRequest,
+        CreateMessageRequestArgs, CreateRunRequestArgs, CreateThreadRequest, FileInput,
+        FilePurpose, InputSource, MessageContent, MessageRole, RunStatus, ThreadObject,
     },
     Client,
 };
 use clap::Parser;
 use cli_args::{CliArgs, CliCommand};
 use dialoguer::Input;
-use tokio::time::sleep;
+use tokio::{fs::read_to_string, time::sleep};
 
 mod cli_args;
 
@@ -35,6 +36,8 @@ async fn main() -> anyhow::Result<()> {
                 .threads()
                 .create(CreateThreadRequest::default())
                 .await?;
+
+            println!("Chat thread ID is: {}", thread.id);
 
             let asst = load_assistant(&client, &assistant_name).await?;
 
@@ -96,9 +99,97 @@ async fn main() -> anyhow::Result<()> {
             assistant_name,
             thread_id,
         } => {
-            let thread = client.threads().retrieve(&thread_id).await?;
-
             let asst = load_assistant(&client, &assistant_name).await?;
+
+            loop {
+                let input: String = Input::new()
+                    .with_prompt("User")
+                    .interact_text()
+                    .context("unable to get input from console")?;
+
+                if input == "/q" {
+                    break;
+                }
+
+                client
+                    .threads()
+                    .messages(&thread_id)
+                    .create(
+                        CreateMessageRequestArgs::default()
+                            .role(MessageRole::User)
+                            .content(input)
+                            .build()?,
+                    )
+                    .await?;
+
+                let run = client
+                    .threads()
+                    .runs(&thread_id)
+                    .create(
+                        CreateRunRequestArgs::default()
+                            .assistant_id(&asst.id)
+                            .build()?,
+                    )
+                    .await?;
+
+                loop {
+                    let run = client.threads().runs(&thread_id).retrieve(&run.id).await?;
+
+                    match run.status {
+                        RunStatus::Completed => {
+                            println!(
+                                "Assistant: {}",
+                                get_last_message(&client, &thread_id).await?
+                            );
+                            break;
+                        }
+
+                        RunStatus::Queued | RunStatus::InProgress => {}
+
+                        other => {
+                            println!("Error while run: {:?}", other);
+                            break;
+                        }
+                    }
+                    sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+
+        CliCommand::UploadFile { path, name } => {
+            println!("Reading file...");
+
+            let source = read_to_string(path).await?;
+
+            println!("File is read. Uploading...");
+
+            let response = client
+                .files()
+                .create(CreateFileRequest {
+                    file: FileInput {
+                        source: InputSource::VecU8 {
+                            filename: name,
+                            vec: source.into_bytes(),
+                        },
+                    },
+
+                    purpose: FilePurpose::Assistants,
+                })
+                .await?;
+
+            println!("File is uploaded! It's ID is: {}", response.id);
+        }
+
+        CliCommand::AttachFile { id, assitant_name } => {
+            println!("Attaching file...");
+
+            client
+                .assistants()
+                .files(&load_assistant(&client, assitant_name).await?.id)
+                .create(CreateAssistantFileRequest { file_id: id })
+                .await?;
+
+            println!("File attached!");
         }
     }
 
@@ -117,6 +208,9 @@ async fn create_assistant(
         .name(name)
         .model(llm_model)
         .instructions(instruction)
+        .tools(vec![AssistantTools::FileSearch(
+            AssistantToolsFileSearch::default(),
+        )])
         .build()?;
 
     client.assistants().create(request).await?;

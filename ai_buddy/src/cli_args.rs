@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -23,4 +25,10 @@ pub enum CliCommand {
         assistant_name: String,
         thread_id: String,
     },
+
+    /// Upload file to OpenAI account.
+    UploadFile { path: PathBuf, name: String },
+
+    /// Attach file to the OpenAI assistant.
+    AttachFile { id: String, assitant_name: String },
 }
