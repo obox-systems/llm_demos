@@ -53,7 +53,7 @@ async fn chat(model_name: impl Into<String>) -> anyhow::Result<()> {
             .interact_text()
             .context("unable to get input from console")?;
 
-        if input == "quit" {
+        if input == "/q" {
             break;
         }
 
@@ -68,7 +68,7 @@ async fn chat(model_name: impl Into<String>) -> anyhow::Result<()> {
             .context("unable to send messages to Ollama")?;
 
         if let Some(message) = result.message {
-            println!("{}", message.content);
+            println!("Assistant: {}", message.content);
         } else {
             bail!("ollama didn't return any message");
         }
