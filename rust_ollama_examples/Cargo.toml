@@ -1,0 +1,11 @@
+[package]
+name = "rust_ollama_examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.91"
+clap = { version = "4.5.20", features = ["derive"] }
+dialoguer = "0.11.0"
+ollama-rs = "0.2.1"
+tokio = { version = "1.41.0", features = ["full"] }

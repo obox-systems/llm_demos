@@ -1,0 +1,10 @@
+[package]
+name = "is_rust_kind_data_sci"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.91"
+linfa = "0.7.0"
+linfa-datasets = { version = "0.7.0", features = ["iris"] }
+linfa-trees = "0.7.0"
